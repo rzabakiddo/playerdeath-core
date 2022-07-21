@@ -9,17 +9,16 @@ import org.bukkit.entity.Player;
 import rzab.PDeath;
 import rzab.process.data.PlayerData;
 
+import java.util.ArrayList;
 import java.util.Objects;
 
 import static java.lang.Thread.*;
 
 public class DeathProcess {
-
 	public void playerDied(PlayerData p) {
 		switch (p.currentStage) {
 		case ALIVE:
-			Bukkit.getScheduler().runTaskLater(PDeath.getInstance(), () -> p.player.setHealth(Objects.requireNonNull(p.player.getAttribute(Attribute.GENERIC_MAX_HEALTH)).getDefaultValue()), 1L);
-
+			p.expBefore = p.player.getTotalExperience();
 			p.currentStage = LiveStage.DYING;
 			p.playerThread = Bukkit.getScheduler().runTaskAsynchronously(PDeath.getInstance(), () -> {
 				p.timeLeft = PDeath.getInstance().deathTime();
@@ -28,9 +27,17 @@ public class DeathProcess {
 					currentThread().interrupt();
 					return;
 				}
-				if (PDeath.getInstance().dyingLife() > 0)
-					p.player.setHealth(PDeath.getInstance().deathTime());
-				Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> PDeath.getInstance().getProcess().armStand(p.player).addPassenger(p.player));
+				final ArmorStand[] armorStand = {null};
+
+				Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> {
+					armorStand[0] = PDeath.getInstance().getProcess().armStand(p.player);
+					 if (PDeath.getInstance().dyingLife() == -1)
+						 p.player.spigot().respawn();
+					 if (PDeath.getInstance().dyingLife() > 0)
+						 p.player.setHealth(PDeath.getInstance().deathTime());
+					armorStand[0].addPassenger(p.player);
+				});
+
 
 				while (p.timeLeft > 0) {
 					p.player.setExp((float) p.timeLeft / (float) PDeath.getInstance().deathTime());
@@ -40,9 +47,24 @@ public class DeathProcess {
 						//noinspection BusyWait
 						sleep(1000L);
 					} catch (InterruptedException e) {
+						Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> {
+							try {
+								armorStand[0].remove();
+							}catch (Exception exc) {
+
+							}
+							p.player.setTotalExperience(p.player.getTotalExperience());
+						});
 						return;
 					}
 				}
+				Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> {
+					try {
+						armorStand[0].remove();
+					}catch (Exception exc) {
+
+					}
+				});
 				Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> p.player.setHealth(0));
 			});
 			break;
@@ -57,7 +79,8 @@ public class DeathProcess {
 	}
 
 	public void playerRespawn(PlayerData p) {
-		p.currentStage = LiveStage.ALIVE;
+		if(p.currentStage!=LiveStage.DYING)
+			p.currentStage = LiveStage.ALIVE;
 	}
 
 	public ArmorStand armStand(Player p) {

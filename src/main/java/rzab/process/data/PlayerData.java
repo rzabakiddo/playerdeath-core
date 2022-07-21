@@ -8,6 +8,8 @@ import rzab.process.LiveStage;
 public class PlayerData {
 
 	public Player player;
+
+	public int expBefore;
 	public BukkitTask playerThread;
 	public LiveStage currentStage;
 	public int timeLeft;
