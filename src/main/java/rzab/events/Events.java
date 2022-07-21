@@ -1,20 +1,21 @@
 package rzab.events;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerExpChangeEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
+import org.bukkit.event.player.*;
 import org.spigotmc.event.entity.EntityDismountEvent;
 import rzab.PDeath;
 import rzab.process.LiveStage;
 import rzab.process.data.PlayerData;
+
+import java.util.Objects;
 
 public class Events implements Listener {
 
@@ -52,5 +53,22 @@ public class Events implements Listener {
 			pd.player.setHealth(0);
 		}
 		PDeath.getInstance().getDManager().remove(e.getPlayer());
+	}
+
+	@EventHandler
+	public void onInteract(PlayerInteractAtEntityEvent e){
+		if(e.getRightClicked() instanceof Player) {
+			if(Objects.equals(e.getPlayer().getInventory().getItemInMainHand().getData().getItemType(), Material.getMaterial(PDeath.getInstance().reviveItem()))) {
+				PlayerData playerData = PDeath.getInstance().getData((Player) e.getRightClicked());
+				if (playerData.currentStage == LiveStage.DYING) {
+					playerData.player.setHealth(playerData.player.getAttribute(Attribute.GENERIC_MAX_HEALTH).getDefaultValue());
+					playerData.currentStage = LiveStage.ALIVE;
+					if(playerData.entityBlock!=null){
+						playerData.entityBlock.remove();
+						playerData.entityBlock=null;
+					}
+				}
+			}
+		}
 	}
 }

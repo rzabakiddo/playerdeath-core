@@ -5,6 +5,7 @@ import java.util.Set;
 
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import rzab.PDeath;
 
 public class DataManager {
 	private final Set<PlayerData> players = new HashSet<>();
@@ -22,6 +23,14 @@ public class DataManager {
 	}
 
 	public void remove(Player player) {
+		{
+			PlayerData pd = PDeath.getInstance().getData(player);
+			try {
+				pd.entityBlock.remove();
+			}catch (Exception e) {
+				System.out.println("Tried to remove entityBlock but Exception thrown");
+			}
+		}
 		players.removeIf(dataPlayer -> dataPlayer.player == player);
 	}
 }

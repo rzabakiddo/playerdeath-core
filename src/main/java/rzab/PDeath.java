@@ -2,6 +2,7 @@ package rzab;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import rzab.events.*;
@@ -11,7 +12,8 @@ import rzab.process.data.PlayerData;
 
 public class PDeath extends JavaPlugin {
 
-	private int dyingLife, reviveItem, deathTime;
+	private String reviveItem;
+	private int dyingLife, deathTime;
 	private DataManager dataManager;
 	private DeathProcess deathProcess;
 	private static PDeath instance;
@@ -22,7 +24,7 @@ public class PDeath extends JavaPlugin {
 		this.saveDefaultConfig();
 		FileConfiguration config = this.getConfig();
 		dyingLife = config.getInt("dying-life", -1);
-		reviveItem = config.getInt("revive-item", 322);
+		reviveItem = config.getString("revive-item", "golden_apple");
 		deathTime = config.getInt("death-time", 60);
 		dataManager = new DataManager();
 		deathProcess = new DeathProcess();
@@ -39,7 +41,7 @@ public class PDeath extends JavaPlugin {
 		return dyingLife;
 	}
 
-	public int reviveItem() {
+	public String reviveItem() {
 		return reviveItem;
 	}
 

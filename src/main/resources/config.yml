@@ -1,5 +1,5 @@
-#Item used to revive, list available at: https://minecraftitemids.com/ 322-golden apple
-revive-item: 322
+#Item used to revive, list available at: https://minecraftitemids.com/ golden apple
+revive-item: 'golden_apple'
 
 #Time after which player will die (in seconds)
 death-time: 60
