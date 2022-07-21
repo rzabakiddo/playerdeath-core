@@ -29,14 +29,15 @@ public class DeathProcess {
 				}
 				final ArmorStand[] armorStand = {null};
 
-				Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> {
+				Bukkit.getScheduler().runTaskLater(PDeath.getInstance(), () -> {
 					armorStand[0] = PDeath.getInstance().getProcess().armStand(p.player);
 					 if (PDeath.getInstance().dyingLife() == -1)
 						 p.player.spigot().respawn();
 					 if (PDeath.getInstance().dyingLife() > 0)
 						 p.player.setHealth(PDeath.getInstance().deathTime());
+					p.player.teleport(armorStand[0]);
 					armorStand[0].addPassenger(p.player);
-				});
+				},2L);
 
 
 				while (p.timeLeft > 0) {
@@ -65,6 +66,8 @@ public class DeathProcess {
 
 					}
 				});
+				p.player.setExp(0);
+				p.player.setLevel(0);
 				Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> p.player.setHealth(0));
 			});
 			break;

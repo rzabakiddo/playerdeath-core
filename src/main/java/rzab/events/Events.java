@@ -48,7 +48,7 @@ public class Events implements Listener {
 		if(pd.playerThread!=null)
 			Bukkit.getScheduler().cancelTask(pd.playerThread.getTaskId());
 		if(pd.currentStage== LiveStage.DYING) {
-			pd.player.setTotalExperience(pd.player.getTotalExperience());
+			pd.player.setTotalExperience(pd.expBefore);
 			pd.player.setHealth(0);
 		}
 		PDeath.getInstance().getDManager().remove(e.getPlayer());
