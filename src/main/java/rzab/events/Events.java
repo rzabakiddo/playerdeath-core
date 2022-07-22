@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
@@ -19,6 +20,16 @@ import java.util.Objects;
 
 public class Events implements Listener {
 
+    @EventHandler
+    public void onDamage(EntityDamageByEntityEvent e){
+        if(e.getEntity() instanceof Player && e.getDamager() instanceof Player){
+            PlayerData playerData = PDeath.getInstance().getData((Player) e.getEntity());
+            if(playerData.currentStage==LiveStage.DYING){
+                e.setCancelled(true);
+                playerData.player.setHealth(0);
+            }
+        }
+    }
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDeath(PlayerDeathEvent e) {
         PlayerData playerData = PDeath.getInstance().getData(e.getEntity());
@@ -67,15 +78,21 @@ public class Events implements Listener {
     @EventHandler
     public void onInteract(PlayerInteractAtEntityEvent e) {
         if (e.getRightClicked() instanceof Player) {
-            if (Objects.equals(e.getPlayer().getInventory().getItemInMainHand().getData().getItemType(), Material.getMaterial(PDeath.getInstance().reviveItem()))) {
+            if (Objects.equals(e.getPlayer().getInventory().getItemInMainHand().getData().getItemType(), Material.getMaterial(PDeath.getInstance().reviveItem().toUpperCase()))) {
                 PlayerData playerData = PDeath.getInstance().getData((Player) e.getRightClicked());
                 if (playerData.currentStage == LiveStage.DYING) {
                     playerData.player.setHealth(playerData.player.getMaxHealth());
                     playerData.currentStage = LiveStage.ALIVE;
+                    if (playerData.playerThread != null) {
+                        playerData.playerThread.cancel();
+                        playerData.playerThread = null;
+                    }
                     if (playerData.entityBlock != null) {
                         playerData.entityBlock.remove();
                         playerData.entityBlock = null;
                     }
+                    playerData.healed=true;
+                    playerData.player.teleport(playerData.player.getLocation().add(0,.75,0));
                 }
             }
         }

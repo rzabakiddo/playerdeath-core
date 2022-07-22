@@ -13,8 +13,8 @@ import java.util.List;
 public class PlayerData {
 
 	public Player player;
-	public boolean stop;
 	public ArmorStand entityBlock;
+	public boolean healed;
 	public int expBefore;
 	public BukkitTask playerThread;
 	public HashSet<BukkitTask> otherTasks = new HashSet<>();

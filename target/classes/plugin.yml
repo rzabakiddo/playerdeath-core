@@ -1,0 +1,5 @@
+main: rzab.PDeath
+author: rzab
+version: '1.0'
+name: CustomDeath
+description: "Custom death plugin"

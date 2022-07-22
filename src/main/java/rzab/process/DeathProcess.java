@@ -1,6 +1,5 @@
 package rzab.process;
 
-import org.bukkit.Bukkit;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
 
@@ -18,26 +17,24 @@ public class DeathProcess {
             p.entityBlock.remove();
             p.entityBlock = null;
         }
+        if (p.playerThread != null) {
+            p.playerThread.cancel();
+            p.playerThread = null;
+        }
         switch (p.currentStage) {
             case ALIVE:
                 p.currentStage = LiveStage.DYING;
-                p.expBefore = p.player.getTotalExperience();
-                PDeath.getInstance().getProcess().armStand(p);
-                p.player.teleport(p.entityBlock);
-                p.entityBlock.addPassenger(p.player);
                 p.otherTasks.add(new BukkitRunnable() {
                     @Override
                     public void run() {
                         p.player.spigot().respawn();
-                        p.stop=true;
-                        Bukkit.broadcastMessage("switch");
                     }
                 }.runTaskLater(PDeath.getInstance(), 2L));
                 p.playerThread = new BukkitRunnable() {
 
                     @Override
                     public synchronized void cancel() throws IllegalStateException {
-                        if(p.currentStage==ALIVE)
+                        if (p.currentStage == ALIVE)
                             p.player.setTotalExperience(p.expBefore);
                         super.cancel();
                     }
@@ -45,8 +42,17 @@ public class DeathProcess {
                     @Override
                     public void run() {
                         p.timeLeft = PDeath.getInstance().deathTime();
+                        p.otherTasks.add(new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                p.expBefore = p.player.getTotalExperience();
+                                PDeath.getInstance().getProcess().armStand(p);
+                                p.player.teleport(p.entityBlock);
+                                p.entityBlock.addPassenger(p.player);
+                            }
+                        }.runTask(PDeath.getInstance()));
                         while (p.timeLeft > 0) {
-                            if(isCancelled())
+                            if (isCancelled())
                                 break;
                             p.player.setExp((float) p.timeLeft / (float) PDeath.getInstance().deathTime());
                             p.player.setLevel(p.timeLeft);
@@ -71,16 +77,20 @@ public class DeathProcess {
                         p.otherTasks.add(new BukkitRunnable() {
                             @Override
                             public void run() {
-                                if(p.entityBlock!=null)
+                                if(p.healed)
+                                {
+                                    p.healed=false;
+                                    return;
+                                }
+                                if (p.entityBlock != null)
                                     p.entityBlock.remove();
                                 p.player.setHealth(0);
                                 p.player.setExp(0);
                                 p.player.setLevel(0);
-                                cancel();
                             }
                         }.runTask(PDeath.getInstance()));
                     }
-                }.runTaskLaterAsynchronously(PDeath.getInstance(),2L);
+                }.runTaskAsynchronously(PDeath.getInstance());
                 break;
             case DYING:
                 p.currentStage = DEAD;
@@ -89,16 +99,8 @@ public class DeathProcess {
     }
 
     public void playerRespawn(PlayerData p) {
-        Bukkit.broadcastMessage("cream-test " + p.stop);
-        if (p.playerThread != null && !p.stop) {
-            p.playerThread.cancel();
-            p.playerThread = null;
-        }
-        if(p.stop)
-            p.stop=false;
         p.otherTasks.forEach(BukkitTask::cancel);
         p.otherTasks.clear();
-        Bukkit.broadcastMessage(p.currentStage.name());
         if (p.currentStage != LiveStage.DYING)
             p.currentStage = LiveStage.ALIVE;
     }
