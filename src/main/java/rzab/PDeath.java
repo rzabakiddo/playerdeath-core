@@ -13,7 +13,7 @@ import rzab.process.data.PlayerData;
 public class PDeath extends JavaPlugin {
 
 	private String reviveItem;
-	private int dyingLife, deathTime;
+	private int deathTime;
 	private DataManager dataManager;
 	private DeathProcess deathProcess;
 	private static PDeath instance;
@@ -23,7 +23,6 @@ public class PDeath extends JavaPlugin {
 		instance = this;
 		this.saveDefaultConfig();
 		FileConfiguration config = this.getConfig();
-		dyingLife = config.getInt("dying-life", -1);
 		reviveItem = config.getString("revive-item", "golden_apple");
 		deathTime = config.getInt("death-time", 60);
 		dataManager = new DataManager();
@@ -35,10 +34,6 @@ public class PDeath extends JavaPlugin {
 
 	public static PDeath getInstance() {
 		return instance;
-	}
-
-	public int dyingLife() {
-		return dyingLife;
 	}
 
 	public String reviveItem() {

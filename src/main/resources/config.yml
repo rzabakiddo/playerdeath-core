@@ -3,6 +3,3 @@ revive-item: 'golden_apple'
 
 #Time after which player will die (in seconds)
 death-time: 60
-
-#This parameter determines how many lives the player who dies has, -1 means when the player is touched dies immediately, (min -1) if dying-life is 0 that means you skip dying process
-dying-life: -1

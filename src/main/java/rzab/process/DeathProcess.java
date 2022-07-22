@@ -1,96 +1,113 @@
 package rzab.process;
 
 import org.bukkit.Bukkit;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Player;
 
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import rzab.PDeath;
 import rzab.process.data.PlayerData;
 
-import java.util.ArrayList;
-import java.util.Objects;
-
 import static java.lang.Thread.*;
+import static rzab.process.LiveStage.*;
 
 public class DeathProcess {
-	public void playerDied(PlayerData p) {
-		switch (p.currentStage) {
-		case ALIVE:
-			p.expBefore = p.player.getTotalExperience();
-			p.currentStage = LiveStage.DYING;
-			p.playerThread = Bukkit.getScheduler().runTaskAsynchronously(PDeath.getInstance(), () -> {
-				p.timeLeft = PDeath.getInstance().deathTime();
-				if (PDeath.getInstance().dyingLife() == 0) {
-					p.player.setHealth(0);
-					currentThread().interrupt();
-					return;
-				}
-				Bukkit.getScheduler().runTaskLater(PDeath.getInstance(), () -> {
-					p.entityBlock = PDeath.getInstance().getProcess().armStand(p.player);
-					 if (PDeath.getInstance().dyingLife() == -1)
-						 p.player.spigot().respawn();
-					 if (PDeath.getInstance().dyingLife() > 0)
-						 p.player.setHealth(PDeath.getInstance().deathTime());
-					p.player.teleport(p.entityBlock);
-					p.entityBlock.addPassenger(p.player);
-				},2L);
+    public void playerDied(PlayerData p) {
+        if (p.entityBlock != null) {
+            p.entityBlock.remove();
+            p.entityBlock = null;
+        }
+        switch (p.currentStage) {
+            case ALIVE:
+                p.currentStage = LiveStage.DYING;
+                p.expBefore = p.player.getTotalExperience();
+                PDeath.getInstance().getProcess().armStand(p);
+                p.player.teleport(p.entityBlock);
+                p.entityBlock.addPassenger(p.player);
+                p.otherTasks.add(new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        p.player.spigot().respawn();
+                        p.stop=true;
+                        Bukkit.broadcastMessage("switch");
+                    }
+                }.runTaskLater(PDeath.getInstance(), 2L));
+                p.playerThread = new BukkitRunnable() {
 
+                    @Override
+                    public synchronized void cancel() throws IllegalStateException {
+                        if(p.currentStage==ALIVE)
+                            p.player.setTotalExperience(p.expBefore);
+                        super.cancel();
+                    }
 
-				while (p.timeLeft > 0) {
-					p.player.setExp((float) p.timeLeft / (float) PDeath.getInstance().deathTime());
-					p.player.setLevel(p.timeLeft);
-					p.timeLeft--;
-					try {
-						//noinspection BusyWait
-						sleep(1000L);
-					} catch (InterruptedException e) {
-						Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> {
-							try {
-								p.entityBlock.remove();
-							}catch (Exception exc) {
+                    @Override
+                    public void run() {
+                        p.timeLeft = PDeath.getInstance().deathTime();
+                        while (p.timeLeft > 0) {
+                            if(isCancelled())
+                                break;
+                            p.player.setExp((float) p.timeLeft / (float) PDeath.getInstance().deathTime());
+                            p.player.setLevel(p.timeLeft);
+                            try {
+                                //noinspection BusyWait
+                                sleep(1000L);
+                            } catch (InterruptedException e) {
+                                p.otherTasks.add(new BukkitRunnable() {
+                                    @Override
+                                    public void run() {
+                                        if (p.entityBlock != null)
+                                            p.entityBlock.remove();
+                                        p.player.setTotalExperience(p.player.getTotalExperience());
+                                        cancel();
+                                    }
+                                }.runTask(PDeath.getInstance()));
+                                break;
+                            }
 
-							}
-							p.player.setTotalExperience(p.player.getTotalExperience());
-						});
-						return;
-					}
-				}
-				Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> {
-					try {
-						p.entityBlock.remove();
-					}catch (Exception exc) {
+                            p.timeLeft--;
+                        }
+                        p.otherTasks.add(new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                if(p.entityBlock!=null)
+                                    p.entityBlock.remove();
+                                p.player.setHealth(0);
+                                p.player.setExp(0);
+                                p.player.setLevel(0);
+                                cancel();
+                            }
+                        }.runTask(PDeath.getInstance()));
+                    }
+                }.runTaskLaterAsynchronously(PDeath.getInstance(),2L);
+                break;
+            case DYING:
+                p.currentStage = DEAD;
+                break;
+        }
+    }
 
-					}
-				});
-				p.player.setExp(0);
-				p.player.setLevel(0);
-				Bukkit.getScheduler().runTask(PDeath.getInstance(), () -> p.player.setHealth(0));
-			});
-			break;
-		case DYING:
-			p.currentStage = LiveStage.DEAD;
-			if (p.playerThread != null)
-				Bukkit.getScheduler().cancelTask(p.playerThread.getTaskId());
-			break;
-			default:
-			break;
-		}
-	}
+    public void playerRespawn(PlayerData p) {
+        Bukkit.broadcastMessage("cream-test " + p.stop);
+        if (p.playerThread != null && !p.stop) {
+            p.playerThread.cancel();
+            p.playerThread = null;
+        }
+        if(p.stop)
+            p.stop=false;
+        p.otherTasks.forEach(BukkitTask::cancel);
+        p.otherTasks.clear();
+        Bukkit.broadcastMessage(p.currentStage.name());
+        if (p.currentStage != LiveStage.DYING)
+            p.currentStage = LiveStage.ALIVE;
+    }
 
-	public void playerRespawn(PlayerData p) {
-		if(p.currentStage!=LiveStage.DYING)
-			p.currentStage = LiveStage.ALIVE;
-	}
-
-	public ArmorStand armStand(Player p) {
-		ArmorStand entity = (ArmorStand) p.getWorld().spawnEntity(p.getLocation(), EntityType.ARMOR_STAND);
-		entity.teleport(entity.getLocation().subtract(0, Math.abs(entity.getEyeLocation().getY()-entity.getLocation().getY()), 0));
-		entity.setVisible(false);
-		entity.setGravity(false);
-		entity.setInvulnerable(true);
-		return entity;
-	}
+    public void armStand(PlayerData p) {
+        p.entityBlock = (ArmorStand) p.player.getWorld().spawnEntity(p.player.getLocation().subtract(0, 0x1.cp0, 0), EntityType.ARMOR_STAND);
+        p.entityBlock.setVisible(false);
+        p.entityBlock.setGravity(false);
+        p.entityBlock.setInvulnerable(true);
+    }
 
 }
