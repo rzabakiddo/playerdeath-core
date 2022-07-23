@@ -4,9 +4,10 @@ rzab\PDeath.class
 rzab\process\data\DataManager.class
 rzab\process\DeathProcess$1.class
 rzab\process\DeathProcess$2$3.class
+rzab\PDeath$ReviveCommand.class
 rzab\process\DeathProcess$2.class
 rzab\events\Events.class
-rzab\process\LiveStage.class
+rzab\process\LifeStage.class
 rzab\process\DeathProcess.class
 rzab\process\data\PlayerData.class
 rzab\process\DeathProcess$3.class

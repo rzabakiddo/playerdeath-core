@@ -3,3 +3,19 @@ author: rzab
 version: '1.0'
 name: CustomDeath
 description: "Custom death plugin"
+
+commands:
+  revive:
+    description: The command is used to revive players or change their stage of death.
+    aliases: [rev, rv]
+    permission: pdeath.revive
+    usage: /<command> help - for help.
+
+permissions:
+  pdeath.*:
+    description: Allows you to use all commands from the CustomDeath plugin.
+    children:
+      pdeath.revive: true
+  pdeath.revive:
+    description: Allows you to manage revivals.
+    default: false

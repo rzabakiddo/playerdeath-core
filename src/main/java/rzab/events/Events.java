@@ -1,6 +1,5 @@
 package rzab.events;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
@@ -10,10 +9,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
-import org.bukkit.inventory.ItemStack;
 import org.spigotmc.event.entity.EntityDismountEvent;
 import rzab.PDeath;
-import rzab.process.LiveStage;
+import rzab.process.LifeStage;
 import rzab.process.data.PlayerData;
 
 import java.util.Objects;
@@ -24,7 +22,7 @@ public class Events implements Listener {
     public void onDamage(EntityDamageByEntityEvent e){
         if(e.getEntity() instanceof Player && e.getDamager() instanceof Player){
             PlayerData playerData = PDeath.getInstance().getData((Player) e.getEntity());
-            if(playerData.currentStage==LiveStage.DYING){
+            if(playerData.currentStage== LifeStage.DYING){
                 e.setCancelled(true);
                 playerData.player.setHealth(0);
             }
@@ -33,7 +31,7 @@ public class Events implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onDeath(PlayerDeathEvent e) {
         PlayerData playerData = PDeath.getInstance().getData(e.getEntity());
-        if (playerData.currentStage == LiveStage.ALIVE) {
+        if (playerData.currentStage == LifeStage.ALIVE) {
             e.setDroppedExp(0);
             e.setKeepInventory(true);
             e.getDrops().clear();
@@ -68,7 +66,7 @@ public class Events implements Listener {
         PlayerData pd = PDeath.getInstance().getData(e.getPlayer());
         if (pd.playerThread != null)
             pd.playerThread.cancel();
-        if (pd.currentStage == LiveStage.DYING) {
+        if (pd.currentStage == LifeStage.DYING) {
             pd.player.setTotalExperience(pd.expBefore);
             pd.player.setHealth(0);
         }
@@ -80,9 +78,9 @@ public class Events implements Listener {
         if (e.getRightClicked() instanceof Player) {
             if (Objects.equals(e.getPlayer().getInventory().getItemInMainHand().getData().getItemType(), Material.getMaterial(PDeath.getInstance().reviveItem().toUpperCase()))) {
                 PlayerData playerData = PDeath.getInstance().getData((Player) e.getRightClicked());
-                if (playerData.currentStage == LiveStage.DYING) {
+                if (playerData.currentStage == LifeStage.DYING) {
                     playerData.player.setHealth(playerData.player.getMaxHealth());
-                    playerData.currentStage = LiveStage.ALIVE;
+                    playerData.currentStage = LifeStage.ALIVE;
                     if (playerData.playerThread != null) {
                         playerData.playerThread.cancel();
                         playerData.playerThread = null;

@@ -1,5 +1,5 @@
 package rzab.process;
 
-public enum LiveStage {
+public enum LifeStage {
 	ALIVE, DYING, DEAD
 }

@@ -9,7 +9,7 @@ import rzab.PDeath;
 import rzab.process.data.PlayerData;
 
 import static java.lang.Thread.*;
-import static rzab.process.LiveStage.*;
+import static rzab.process.LifeStage.*;
 
 public class DeathProcess {
     public void playerDied(PlayerData p) {
@@ -23,7 +23,7 @@ public class DeathProcess {
         }
         switch (p.currentStage) {
             case ALIVE:
-                p.currentStage = LiveStage.DYING;
+                p.currentStage = LifeStage.DYING;
                 p.otherTasks.add(new BukkitRunnable() {
                     @Override
                     public void run() {
@@ -31,13 +31,6 @@ public class DeathProcess {
                     }
                 }.runTaskLater(PDeath.getInstance(), 2L));
                 p.playerThread = new BukkitRunnable() {
-
-                    @Override
-                    public synchronized void cancel() throws IllegalStateException {
-                        if (p.currentStage == ALIVE)
-                            p.player.setTotalExperience(p.expBefore);
-                        super.cancel();
-                    }
 
                     @Override
                     public void run() {
@@ -74,12 +67,15 @@ public class DeathProcess {
 
                             p.timeLeft--;
                         }
+                        if (p.currentStage == ALIVE) {
+                            p.player.setTotalExperience(p.expBefore);
+                            p.expBefore = 0;
+                        }
                         p.otherTasks.add(new BukkitRunnable() {
                             @Override
                             public void run() {
-                                if(p.healed)
-                                {
-                                    p.healed=false;
+                                if (p.healed) {
+                                    p.healed = false;
                                     return;
                                 }
                                 if (p.entityBlock != null)
@@ -101,8 +97,8 @@ public class DeathProcess {
     public void playerRespawn(PlayerData p) {
         p.otherTasks.forEach(BukkitTask::cancel);
         p.otherTasks.clear();
-        if (p.currentStage != LiveStage.DYING)
-            p.currentStage = LiveStage.ALIVE;
+        if (p.currentStage != LifeStage.DYING)
+            p.currentStage = LifeStage.ALIVE;
     }
 
     public void armStand(PlayerData p) {

@@ -2,13 +2,10 @@ package rzab.process.data;
 
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
-import rzab.process.LiveStage;
+import rzab.process.LifeStage;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 
 public class PlayerData {
 
@@ -18,11 +15,11 @@ public class PlayerData {
 	public int expBefore;
 	public BukkitTask playerThread;
 	public HashSet<BukkitTask> otherTasks = new HashSet<>();
-	public LiveStage currentStage;
+	public LifeStage currentStage;
 	public int timeLeft;
 
 	public PlayerData(Player player) {
 		this.player = player;
-		this.currentStage = LiveStage.ALIVE;
+		this.currentStage = LifeStage.ALIVE;
 	}
 }
